@@ -1,0 +1,56 @@
+"apiVersion": "batch/v1beta1"
+"kind": "CronJob"
+"metadata":
+  "name": "cronjob-cleanup"
+"spec":
+  "jobTemplate":
+    "spec":
+      "backoffLimit": 0
+      "template":
+        "spec":
+          "containers":
+          - "args":
+            - |
+              cat > tests.txt <<EOF
+              cronjob.batch/jax-head-tpu-vm-v4-base-func-v4-8-1vm
+              cronjob.batch/jax-latest-tpu-vm-v4-base-func-v4-8-1vm
+              cronjob.batch/pt-nightly-mnist-pjrt-conv-v4-8-1vm
+              cronjob.batch/pt-nightly-resnet50-mp-conv-v4-8-1vm
+              cronjob.batch/pt-nightly-resnet50-pjrt-conv-v4-8-1vm
+              cronjob.batch/pt-nightly-resnet50-pjrt-fake-v4-8-1vm
+              cronjob.batch/tf-nightly-classifier-efficientnet-conv-v4-32-1vm
+              cronjob.batch/tf-nightly-classifier-efficientnet-conv-v4-8-1vm
+              cronjob.batch/tf-nightly-classifier-efficientnet-func-v4-8-1vm
+              cronjob.batch/tf-nightly-classifier-resnet-func-v4-8-1vm
+              cronjob.batch/tf-nightly-maskrcnn-conv-v4-32-1vm
+              cronjob.batch/tf-nightly-maskrcnn-conv-v4-8-1vm
+              cronjob.batch/tf-nightly-maskrcnn-func-v4-8-1vm
+              cronjob.batch/tf-nightly-mnist-conv-v4-8-1vm
+              cronjob.batch/tf-nightly-ranking-dlrm-func-v4-8-1vm
+              cronjob.batch/tf-nightly-retinanet-conv-v4-32-1vm
+              cronjob.batch/tf-nightly-retinanet-conv-v4-8-1vm
+              cronjob.batch/tf-nightly-retinanet-func-v4-8-1vm
+              cronjob.batch/tf-nightly-vision-resnet-func-v4-8-1vm
+              cronjob.batch/tf-nightly-vision-retinanet-func-v4-8-1vm
+              cronjob.batch/tf-r2.9.1-bert-mnli-conv-v4-32-1vm
+              cronjob.batch/tf-r2.9.1-bert-mnli-conv-v4-8-1vm
+              cronjob.batch/tf-r2.9.1-classifier-resnet-conv-v4-32-1vm
+              cronjob.batch/tf-r2.9.1-classifier-resnet-conv-v4-8-1vm
+              cronjob.batch/tf-r2.9.1-maskrcnn-conv-v4-32-1vm
+              cronjob.batch/tf-r2.9.1-maskrcnn-conv-v4-8-1vm
+              cronjob.batch/tf-r2.9.1-transformer-translate-conv-v4-32-1vm
+              cronjob.batch/tf-r2.9.1-transformer-translate-conv-v4-8-1vm
+              EOF
+              
+              delete_list=$(kubectl get cronjob --namespace=automated -l benchmarkId -o name | grep -vx -f tests.txt)
+              if [[ "$delete_list" ]]; then
+                kubectl delete $delete_list;
+              fi
+            "command":
+            - "bash"
+            - "-cx"
+            "image": "google/cloud-sdk"
+            "name": "clean"
+          "restartPolicy": "Never"
+          "serviceAccount": "cronjob-cleaner"
+  "schedule": "0 */4 * * *"
