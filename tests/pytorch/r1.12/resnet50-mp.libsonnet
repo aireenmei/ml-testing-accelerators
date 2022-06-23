@@ -25,6 +25,8 @@ local tpus = import 'templates/tpus.libsonnet';
       'python3',
       'pytorch/xla/test/test_train_mp_imagenet.py',
       '--model=resnet50',
+      '--num_workers=8',
+      '--batch_size=128',
       '--log_steps=200',
     ] + if self.flags.modelDir != null then [
       '--logdir=%s' % self.flags.modelDir,
@@ -53,8 +55,6 @@ local tpus = import 'templates/tpus.libsonnet';
     ],
   },
   local convergence = common.Convergence {
-    local config = self,
-
     command+: [
       '--num_epochs=90',
       '--datadir=/datasets/imagenet',
@@ -67,8 +67,7 @@ local tpus = import 'templates/tpus.libsonnet';
               FINAL: {
                 fixed_value: {
                   comparison: 'GREATER',
-                  // Larger global batch size gives lower final accuracy
-                  value: if config.accelerator.replicas == 1 then 75 else 74,
+                  value: 74.0,
                 },
                 inclusive_bounds: false,
                 wait_for_n_data_points: 0,
@@ -85,11 +84,6 @@ local tpus = import 'templates/tpus.libsonnet';
   },
   local v3_32 = {
     accelerator: tpus.v3_32,
-  },
-  local v4_8 = {
-    accelerator: tpus.v4_8,
-    // Keep same global batch size as v3
-    command+: ['--batch_size=256'],
   },
 
   local gpu = {
@@ -136,26 +130,13 @@ local tpus = import 'templates/tpus.libsonnet';
       |||,
     },
   },
-  local pjrt = tpuVm + experimental.PjRt {
-    modelName: 'resnet50-pjrt',
-    command: [
-      'python3',
-      'pytorch/xla/test/pjrt/test_train_pjrt_imagenet.py',
-    ] + super.command[2:],
-  },
 
   configs: [
     resnet50 + functional + v100x4 + timeouts.Hours(1),
     resnet50 + functional + v3_8 + timeouts.Hours(2) + tpuVm,
     resnet50 + fake_data + nosummaries + v3_8 + timeouts.Hours(2) + tpuVm,
-    resnet50 + fake_data + nosummaries + v3_8 + timeouts.Hours(2) + pjrt,
     resnet50 + convergence + nosummaries + v3_8 + timeouts.Hours(24) + tpuVm,
-    resnet50 + convergence + nosummaries + v3_8 + timeouts.Hours(24) + pjrt,
     resnet50 + functional + v3_32 + timeouts.Hours(1) + tpuVm,
     resnet50 + convergence + v3_32 + timeouts.Hours(12) + tpuVm,
-    resnet50 + fake_data + nosummaries + v4_8 + timeouts.Hours(2) + tpuVm,
-    resnet50 + fake_data + nosummaries + v4_8 + timeouts.Hours(2) + pjrt,
-    resnet50 + convergence + nosummaries + v4_8 + timeouts.Hours(24) + tpuVm,
-    resnet50 + convergence + nosummaries + v4_8 + timeouts.Hours(24) + pjrt,
   ],
 }

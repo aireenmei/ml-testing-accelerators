@@ -1,4 +1,4 @@
-// Copyright 2021 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,36 +13,35 @@
 // limitations under the License.
 
 local common = import 'common.libsonnet';
-local mixins = import 'templates/mixins.libsonnet';
+local timeouts = import 'templates/timeouts.libsonnet';
 local tpus = import 'templates/tpus.libsonnet';
+local utils = import 'templates/utils.libsonnet';
+
 {
-  local functional = mixins.Functional {
-    extraFlags:: '--config.num_epochs=1',
-    extraConfig:: 'default.py',
-  },
-  local convergence = mixins.Convergence {
-    extraConfig:: 'tpu.py',
-  },
-  local v3_8 = {
-    accelerator: tpus.v3_8,
+  local operations = common.PyTorchTest {
+    modelName: 'python-ops',
+    command: [
+      'bash',
+      'pytorch/xla/test/run_tests.sh',
+    ],
+    metricConfig+: {
+      sourceMap+:: {
+        tensorboard+: {
+          aggregateAssertionsMap:: {},
+        },
+        literals: {},
+      },
+    },
   },
   local v2_8 = {
     accelerator: tpus.v2_8,
   },
-  local v3_32 = {
-    accelerator: tpus.v3_32,
-    extraFlags+:: ' --config.batch_size=$((32*256))',
+  local v3_8 = {
+    accelerator: tpus.v3_8,
   },
-  local imagenet = common.runFlaxLatest {
-    modelName:: 'imagenet',
-  },
-  local imagenet_pod = common.PodFlaxLatest {
-    modelName:: 'imagenet',
-  },
+
   configs: [
-    imagenet + functional + v2_8,
-    imagenet + convergence + v3_8,
-    imagenet_pod + functional + v3_32,
-    imagenet_pod + convergence + v3_32,
+    operations + v2_8 + common.Functional + timeouts.Hours(6),
+    operations + v3_8 + common.Functional + timeouts.Hours(6),
   ],
 }

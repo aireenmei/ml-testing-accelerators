@@ -12,23 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+local cppOperations = import 'cpp-ops.libsonnet';
 local dlrm = import 'dlrm.libsonnet';
-local keras_api = import 'keras-api.libsonnet';
+local fairseqTransformer = import 'fs-transformer.libsonnet';
+local huggingfaceGlue = import 'hf-glue.libsonnet';
+local huggingfaceLanguageModeling = import 'hf-lm.libsonnet';
 local mnist = import 'mnist.libsonnet';
-local nlp_mnli = import 'nlp-mnli.libsonnet';
-local nlp_wmt = import 'nlp-wmt.libsonnet';
-local serving = import 'serving.libsonnet';
-local vision_coco = import 'vision-coco.libsonnet';
-local vision_imagenet = import 'vision-imagenet.libsonnet';
+local pythonOperations = import 'python-ops.libsonnet';
+local resnet50_mp = import 'resnet50-mp.libsonnet';
+local fairseqRobertaPretrain = import 'roberta-pre.libsonnet';
+local unet3d = import 'unet3d.libsonnet';
+local wav2vec2 = import 'wav2vec2.libsonnet';
 
 // Add new models here
 std.flattenArrays([
+  cppOperations.configs,
   dlrm.configs,
-  keras_api.configs,
+  fairseqRobertaPretrain.configs,
+  fairseqTransformer.configs,
+  huggingfaceGlue.configs,
+  huggingfaceLanguageModeling.configs,
   mnist.configs,
-  nlp_mnli.configs,
-  nlp_wmt.configs,
-  serving.configs,
-  vision_imagenet.configs,
-  vision_coco.configs,
+  pythonOperations.configs,
+  resnet50_mp.configs,
+  wav2vec2.configs,
+  unet3d.configs,
 ])
